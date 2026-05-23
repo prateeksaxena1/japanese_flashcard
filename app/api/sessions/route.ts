@@ -63,10 +63,10 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ session }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("[Create Session Error]", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal server error", details: error.message || String(error) },
       { status: 500 }
     );
   }
