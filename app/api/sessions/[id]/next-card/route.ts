@@ -83,6 +83,7 @@ export async function GET(
     return NextResponse.json({
       completed: false,
       card: nextCard,
+      displayMode: session.displayMode,
       progress: {
         current: attemptedIds.length + 1,
         total: session.totalCards,

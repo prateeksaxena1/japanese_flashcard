@@ -10,6 +10,7 @@ interface FlashCardProps {
   partOfSpeech?: string | null;
   module?: { title: string; moduleNumber: number } | null;
   showReading?: boolean;
+  displayModes?: string[];
 }
 
 export default function FlashCard({
@@ -20,6 +21,7 @@ export default function FlashCard({
   partOfSpeech,
   module,
   showReading = false,
+  displayModes = ["kanji"],
 }: FlashCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -47,9 +49,23 @@ export default function FlashCard({
             </span>
           )}
 
-          <span className="text-6xl sm:text-7xl font-bold text-zinc-100 mb-4 leading-tight">
-            {kanji || hiragana}
-          </span>
+          <div className="flex flex-col items-center gap-4 mb-4">
+            {displayModes.includes("kanji") && (kanji || hiragana) && (
+              <span className="text-6xl sm:text-7xl font-bold text-zinc-100 leading-tight">
+                {kanji || hiragana}
+              </span>
+            )}
+            {displayModes.includes("hiragana") && (
+              <span className={`${displayModes.length > 1 ? "text-4xl text-indigo-300" : "text-6xl sm:text-7xl font-bold text-zinc-100"} leading-tight`}>
+                {hiragana}
+              </span>
+            )}
+            {displayModes.includes("romaji") && (
+              <span className={`${displayModes.length > 1 ? "text-2xl text-zinc-400 italic" : "text-6xl sm:text-7xl font-bold text-zinc-100"} leading-tight`}>
+                {romaji}
+              </span>
+            )}
+          </div>
 
           {showReading && kanji && (
             <span className="text-xl text-zinc-400 mb-2">{hiragana}</span>

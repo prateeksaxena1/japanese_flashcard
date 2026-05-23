@@ -34,6 +34,7 @@ export default function SessionPage() {
   const sessionId = params.id as string;
 
   const [card, setCard] = useState<CardData | null>(null);
+  const [displayModes, setDisplayModes] = useState<string[]>(["kanji"]);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [result, setResult] = useState<AttemptResult | null>(null);
   const [completed, setCompleted] = useState(false);
@@ -61,7 +62,11 @@ export default function SessionPage() {
       }
       
       if (data.completed) setCompleted(true);
-      else { setCard(data.card); setProgress(data.progress || { current: 0, total: 0 }); }
+      else { 
+        setCard(data.card); 
+        setDisplayModes(data.displayMode?.split(",") || ["kanji"]);
+        setProgress(data.progress || { current: 0, total: 0 }); 
+      }
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, [sessionId, authFetch]);
@@ -112,7 +117,7 @@ export default function SessionPage() {
             style={{ width: `${(progress.current / progress.total) * 100}%` }} />
         </div>
       </div>
-      {card && <FlashCard kanji={card.kanji} hiragana={card.hiragana} katakana={card.katakana} romaji={card.romaji} partOfSpeech={card.partOfSpeech} module={card.module} />}
+      {card && <FlashCard kanji={card.kanji} hiragana={card.hiragana} katakana={card.katakana} romaji={card.romaji} partOfSpeech={card.partOfSpeech} module={card.module} displayModes={displayModes} />}
       {result ? (
         <ScoreFlash score={result.score} verdict={result.verdict} explanation={result.explanation} correctAnswer={result.correctAnswer} onContinue={fetchNextCard} />
       ) : (

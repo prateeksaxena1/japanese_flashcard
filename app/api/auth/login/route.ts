@@ -16,18 +16,22 @@ export async function POST(request: NextRequest) {
     const redis = getRedisClient();
     
     if (redis) {
-      const rateLimitKey = `rate_limit:login:${ip}`;
-      const attempts = await redis.incr(rateLimitKey);
-      
-      if (attempts === 1) {
-        await redis.expire(rateLimitKey, 15 * 60); // 15 minutes
-      }
-      
-      if (attempts > 5) {
-        return NextResponse.json(
-          { error: "Too many login attempts. Please try again in 15 minutes." },
-          { status: 429 }
-        );
+      try {
+        const rateLimitKey = `rate_limit:login:${ip}`;
+        const attempts = await redis.incr(rateLimitKey);
+        
+        if (attempts === 1) {
+          await redis.expire(rateLimitKey, 15 * 60); // 15 minutes
+        }
+        
+        if (attempts > 5) {
+          return NextResponse.json(
+            { error: "Too many login attempts. Please try again in 15 minutes." },
+            { status: 429 }
+          );
+        }
+      } catch (redisError) {
+        console.warn("[Rate Limit Warning] Redis is offline, skipping rate limit check:", redisError);
       }
     }
 
@@ -37,7 +41,7 @@ export async function POST(request: NextRequest) {
     const result = loginSchema.safeParse(body);
     if (!result.success) {
       return NextResponse.json(
-        { error: result.error.errors[0].message },
+        { error: result.error.issues[0].message },
         { status: 400 }
       );
     }
@@ -64,7 +68,9 @@ export async function POST(request: NextRequest) {
 
     // If successful, reset the rate limit for this IP
     if (redis) {
-      await redis.del(`rate_limit:login:${ip}`);
+      try {
+        await redis.del(`rate_limit:login:${ip}`);
+      } catch (e) {}
     }
 
     // Update last active

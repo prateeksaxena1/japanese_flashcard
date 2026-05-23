@@ -28,6 +28,7 @@ export default function StudyPage() {
   const [modules, setModules] = useState<Module[]>([]);
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const [sessionType, setSessionType] = useState<"PRACTICE" | "TEST">("PRACTICE");
+  const [displayModes, setDisplayModes] = useState<string[]>(["kanji"]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
@@ -84,7 +85,7 @@ export default function StudyPage() {
       const res = await authFetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ moduleIds: selectedModules, sessionType }),
+        body: JSON.stringify({ moduleIds: selectedModules, sessionType, displayMode: displayModes.join(",") }),
       });
 
       const data = await res.json();
@@ -215,6 +216,41 @@ export default function StudyPage() {
                 {type === "PRACTICE" ? "📝 Practice" : "📋 Test"}
               </button>
             ))}
+          </div>
+
+          <h2 className="mb-4 text-sm font-medium text-zinc-400 uppercase tracking-wider mt-8">
+            Step 4 — Display Mode (Front of Card)
+          </h2>
+
+          <div className="flex flex-wrap gap-3 mb-8">
+            {(["kanji", "hiragana", "romaji"] as const).map((mode) => {
+              const isSelected = displayModes.includes(mode);
+              return (
+                <button
+                  key={mode}
+                  onClick={() => {
+                    setDisplayModes((prev) => {
+                      if (prev.includes(mode)) {
+                        return prev.length > 1 ? prev.filter((m) => m !== mode) : prev;
+                      }
+                      return [...prev, mode];
+                    });
+                  }}
+                  className={`rounded-xl border px-6 py-3 text-sm font-medium transition-all capitalize ${
+                    isSelected
+                      ? "border-indigo-500 bg-indigo-500 text-white shadow-md shadow-indigo-500/20"
+                      : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-600"
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className={`h-4 w-4 rounded border flex items-center justify-center ${isSelected ? "border-white bg-indigo-500" : "border-zinc-600"}`}>
+                      {isSelected && <span className="text-[10px] font-bold">✓</span>}
+                    </div>
+                    {mode === "kanji" ? "漢字 Kanji" : mode === "hiragana" ? "あ Hiragana" : "A Romaji"}
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           <button

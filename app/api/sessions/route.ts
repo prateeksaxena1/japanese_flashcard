@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { moduleIds, sessionType = "PRACTICE" } = body;
+    const { moduleIds, sessionType = "PRACTICE", displayMode = "kanji" } = body;
 
     if (!moduleIds || !Array.isArray(moduleIds) || moduleIds.length === 0) {
       return NextResponse.json(
@@ -24,6 +24,17 @@ export async function POST(request: NextRequest) {
     if (!validTypes.includes(sessionType)) {
       return NextResponse.json(
         { error: "Invalid session type" },
+        { status: 400 }
+      );
+    }
+    
+    // Validate display mode
+    const validDisplayModes = ["kanji", "hiragana", "romaji"];
+    const modes = displayMode.split(",");
+    const isValidDisplayMode = modes.length > 0 && modes.every((m: string) => validDisplayModes.includes(m));
+    if (!isValidDisplayMode) {
+      return NextResponse.json(
+        { error: "Invalid display mode" },
         { status: 400 }
       );
     }
@@ -45,6 +56,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: user.userId,
         sessionType: sessionType as "PRACTICE" | "TEST" | "REVIEW",
+        displayMode,
         selectedModules: moduleIds,
         totalCards,
       },

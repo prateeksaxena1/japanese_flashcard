@@ -136,6 +136,7 @@ model FlashcardSession {
   id              String        @id @default(cuid())
   userId          String
   sessionType     SessionType   @default(PRACTICE)
+  displayMode     String        @default("kanji") // kanji, hiragana, or romaji
   selectedModules Json          @default("[]") // string[] of module IDs
   totalCards      Int           @default(0)
   completedCards  Int           @default(0)
