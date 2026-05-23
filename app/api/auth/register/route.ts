@@ -5,26 +5,23 @@ import {
   generateAccessToken,
   generateRefreshToken,
 } from "@/lib/auth";
+import { registerSchema } from "@/lib/validations";
+import { z } from "zod";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, username, password } = body;
-
-    // Validate input
-    if (!email || !username || !password) {
+    
+    // Validate input using Zod
+    const result = registerSchema.safeParse(body);
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Email, username, and password are required" },
+        { error: result.error.errors[0].message },
         { status: 400 }
       );
     }
 
-    if (password.length < 6) {
-      return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
-        { status: 400 }
-      );
-    }
+    const { email, username, password } = result.data;
 
     // Check if user already exists
     const existingUser = await prisma.user.findFirst({

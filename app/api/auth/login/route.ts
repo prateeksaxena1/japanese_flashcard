@@ -6,17 +6,43 @@ import {
   generateRefreshToken,
 } from "@/lib/auth";
 
+import { loginSchema } from "@/lib/validations";
+import getRedisClient from "@/lib/redis";
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { email, password } = body;
+    // 1. Rate Limiting Check (Max 5 attempts per IP per 15 minutes)
+    const ip = request.headers.get("x-forwarded-for") || "unknown-ip";
+    const redis = getRedisClient();
+    
+    if (redis) {
+      const rateLimitKey = `rate_limit:login:${ip}`;
+      const attempts = await redis.incr(rateLimitKey);
+      
+      if (attempts === 1) {
+        await redis.expire(rateLimitKey, 15 * 60); // 15 minutes
+      }
+      
+      if (attempts > 5) {
+        return NextResponse.json(
+          { error: "Too many login attempts. Please try again in 15 minutes." },
+          { status: 429 }
+        );
+      }
+    }
 
-    if (!email || !password) {
+    const body = await request.json();
+    
+    // 2. Input Validation via Zod
+    const result = loginSchema.safeParse(body);
+    if (!result.success) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { error: result.error.errors[0].message },
         { status: 400 }
       );
     }
+    
+    const { email, password } = result.data;
 
     // Find user
     const user = await prisma.user.findUnique({ where: { email } });
@@ -34,6 +60,11 @@ export async function POST(request: NextRequest) {
         { error: "Invalid email or password" },
         { status: 401 }
       );
+    }
+
+    // If successful, reset the rate limit for this IP
+    if (redis) {
+      await redis.del(`rate_limit:login:${ip}`);
     }
 
     // Update last active
